@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mapa de Calor · Salas{% endblock %}</title>
+  <style>
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --surface2: #22263a;
+      --border:   #2e3250;
+      --accent:   #6c63ff;
+      --accent2:  #a78bfa;
+      --text:     #e2e8f0;
+      --muted:    #8892b0;
+      --success:  #63BE7B;
+      --warn:     #FFEB84;
+      --danger:   #F8696B;
+      --radius:   12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent2);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .nav-brand span { color: var(--text); }
+
+    /* CONTENEDOR */
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+    /* BOTONES */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .6rem 1.4rem;
+      border-radius: 8px;
+      border: none;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-outline  { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-success  { background: #16a34a; color: #fff; }
+    .btn-success:hover { opacity: .88; }
+
+    /* ALERTAS */
+    .alert {
+      padding: 1rem 1.2rem;
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+      font-size: .9rem;
+    }
+    .alert-error { background: rgba(248,105,107,.15); border: 1px solid rgba(248,105,107,.4); color: #fca5a5; }
+
+    /* TABS */
+    .tabs { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .tab-btn {
+      padding: .5rem 1.2rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 600;
+      transition: all .2s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* TABLA */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th {
+      background: var(--surface2);
+      padding: .6rem .8rem;
+      text-align: center;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: .5rem .8rem;
+      border-bottom: 1px solid rgba(46,50,80,.5);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(108,99,255,.05); }
+
+    /* CELDA HEATMAP */
+    .heat-cell {
+      border-radius: 6px;
+      padding: .35rem .5rem;
+      font-size: .8rem;
+      font-weight: 700;
+      text-align: center;
+      color: #111;
+      min-width: 60px;
+    }
+
+    /* BADGE */
+    .badge {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent2);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    /* STATS ROW */
+    .stats-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      flex: 1;
+      min-width: 140px;
+    }
+    .stat-card .val { font-size: 2rem; font-weight: 800; color: var(--accent2); }
+    .stat-card .lbl { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+
+    /* LEYENDA */
+    .leyenda {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .ley-grad {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .ley-bar {
+      width: 120px;
+      height: 12px;
+      border-radius: 6px;
+      background: linear-gradient(to right, #63BE7B, #FFEB84, #F8696B);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: .78rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-brand">🔥 <span>Heatmap</span> Salas</a>
+  {% block nav_extra %}{% endblock %}
+</nav>
+
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
+
+<footer>Mapa de Calor · Distribución de Salas por Campus</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
